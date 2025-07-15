@@ -1,0 +1,29 @@
+/* App.css */
+
+/* Define a custom property for your main app background gradient */
+:root {
+  --app-gradient-background: linear-gradient(to bottom, #6a5acd, #8a2be2, #006400);
+}
+
+.gradient-background {
+  background: var(--app-gradient-background);
+}
+
+/* New CSS for the Navbar's dynamic gradient */
+.navbar-gradient-reveal {
+  /* Set initial state for transition */
+  transition: background-position 0.3s ease-out; /* Smooth transition for background-position */
+  background-image: linear-gradient(to right, #6a5acd, #8a2be2, #006400); /* Your desired scrolled gradient colors */
+  background-size: var(--gradient-size, 0%) 100%; /* Control the width of the visible gradient. Starts at 0% */
+  background-repeat: no-repeat;
+  background-position: right center; /* Start the gradient reveal from the right */
+  /* backdrop-filter will make it slightly transparent and blurred when applied */
+  backdrop-filter: blur(5px); /* Add blur effect */
+  -webkit-backdrop-filter: blur(5px); /* Safari compatibility */
+}
+
+/* Ensure full height for the body/html if needed, though h-screen in App.jsx usually handles it */
+html, body, #root {
+  height: 100%;
+}
+@import "tailwindcss"
