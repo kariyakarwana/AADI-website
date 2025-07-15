@@ -29,11 +29,12 @@ const StarsBackground = ({ scrollDirection }) => {
     for (let i = 0; i < NUM_COMETS; i++) {
       const baseX = (width / NUM_COMETS) * i + (Math.random() * 50 - 25);
       const baseY = Math.random() * height * 0.7 + height * 0.15;
-      const tail = Array.from({ length: TAIL_LENGTH }, () => ({
-        x: baseX,
-        y: baseY,
-        opacity: 0,
-      }));
+
+      const tail = [];
+      for (let j = 0; j < TAIL_LENGTH; j++) {
+        tail.push({ x: baseX, y: baseY, opacity: 0 });
+      }
+
       comets.push({ baseX, baseY, tail });
     }
     cometsRef.current = comets;
@@ -46,6 +47,7 @@ const StarsBackground = ({ scrollDirection }) => {
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+
       generateStars(canvas.width, canvas.height);
       generateComets(canvas.width, canvas.height);
       offsetRef.current = 0;
@@ -84,26 +86,32 @@ const StarsBackground = ({ scrollDirection }) => {
 
     const animate = () => {
       drawStars();
-      const angle = Math.PI / 4; // 45°
+      const angle = Math.PI / 4;
 
       cometsRef.current.forEach((comet) => {
         let cometX = comet.baseX + offsetRef.current * Math.cos(angle);
         let cometY = comet.baseY + offsetRef.current * Math.sin(angle);
 
-        // Wrap around
         if (cometX > canvas.width + 50) cometX -= canvas.width + 100;
         if (cometX < -50) cometX += canvas.width + 100;
         if (cometY > canvas.height + 50) cometY -= canvas.height + 100;
         if (cometY < -50) cometY += canvas.height + 100;
 
-        // Update tail
-        const newTail = comet.tail.map((t) => ({ ...t }));
-        for (let i = newTail.length - 1; i > 0; i--) {
-          newTail[i] = { ...newTail[i - 1], opacity: newTail[i - 1].opacity * 0.9 };
-        }
-        newTail[0] = { x: cometX, y: cometY, opacity: 1 };
-        comet.tail = newTail;
+        const newTail = comet.tail.map((_, i) => {
+          if (i === 0) {
+            return { x: cometX, y: cometY, opacity: 1 };
+          } else {
+            const prev = comet.tail[i - 1];
+            return {
+              x: prev.x,
+              y: prev.y,
+              opacity: prev.opacity * 0.9,
+            };
+          }
+        });
 
+        // Assign fresh object, no mutation
+        comet.tail = newTail;
         drawComet(cometX, cometY, comet.tail);
       });
 
