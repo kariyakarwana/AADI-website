@@ -27,10 +27,14 @@ const StarsBackground = ({ scrollDirection }) => {
   const generateComets = (width, height) => {
     const comets = [];
     for (let i = 0; i < NUM_COMETS; i++) {
-      const baseX = (width / NUM_COMETS) * i + (Math.random() * 50 - 25); // spread with some randomness
+      const baseX = (width / NUM_COMETS) * i + (Math.random() * 50 - 25);
       const baseY = Math.random() * height * 0.7 + height * 0.15;
       const speed = 2 + Math.random() * 1;
-      const tail = Array(TAIL_LENGTH).fill().map(() => ({ x: baseX, y: baseY, opacity: 0 }));
+      const tail = Array.from({ length: TAIL_LENGTH }, () => ({
+        x: baseX,
+        y: baseY,
+        opacity: 0,
+      }));
 
       comets.push({
         baseX,
@@ -52,8 +56,7 @@ const StarsBackground = ({ scrollDirection }) => {
 
       generateStars(canvas.width, canvas.height);
       generateComets(canvas.width, canvas.height);
-
-      offsetRef.current = 0; // reset offset on resize
+      offsetRef.current = 0;
     };
 
     const drawStars = () => {
@@ -69,7 +72,7 @@ const StarsBackground = ({ scrollDirection }) => {
     };
 
     const drawComet = (x, y, tail) => {
-      // Draw tail - fading circles
+      // Draw tail
       tail.forEach((point, i) => {
         ctx.beginPath();
         const alpha = point.opacity * ((i + 1) / tail.length);
@@ -78,7 +81,7 @@ const StarsBackground = ({ scrollDirection }) => {
         ctx.fill();
       });
 
-      // Draw comet head - radial gradient
+      // Draw comet head
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, 50);
       gradient.addColorStop(0, 'white');
       gradient.addColorStop(0.3, '#00f2ff');
@@ -94,34 +97,33 @@ const StarsBackground = ({ scrollDirection }) => {
 
       const angle = Math.PI / 4; // 45 degrees
 
-cometsRef.current.forEach((comet) => {
-  // Calculate comet position relative to global offset at 45 degree angle
-  let cometX = comet.baseX + offsetRef.current * Math.cos(angle);
-  let cometY = comet.baseY + offsetRef.current * Math.sin(angle);
+      cometsRef.current.forEach((comet) => {
+        // Calculate new position with angle
+        let cometX = comet.baseX + offsetRef.current * Math.cos(angle);
+        let cometY = comet.baseY + offsetRef.current * Math.sin(angle);
 
-  // Wrap cometX and cometY around canvas width/height for looping
-  if (cometX > canvas.width + 50) cometX -= canvas.width + 100;
-  if (cometX < -50) cometX += canvas.width + 100;
+        // Wrap around canvas
+        if (cometX > canvas.width + 50) cometX -= canvas.width + 100;
+        if (cometX < -50) cometX += canvas.width + 100;
+        if (cometY > canvas.height + 50) cometY -= canvas.height + 100;
+        if (cometY < -50) cometY += canvas.height + 100;
 
-  if (cometY > canvas.height + 50) cometY -= canvas.height + 100;
-  if (cometY < -50) cometY += canvas.height + 100;
+        // Clone tail array and shift
+        const newTail = comet.tail.map((t) => ({ ...t }));
+        for (let i = newTail.length - 1; i > 0; i--) {
+          newTail[i] = { ...newTail[i - 1], opacity: newTail[i - 1].opacity * 0.9 };
+        }
+        newTail[0] = { x: cometX, y: cometY, opacity: 1 };
+        comet.tail = newTail;
 
-  // Update tail positions: shift and fade
-  for (let i = comet.tail.length - 1; i > 0; i--) {
-    comet.tail[i] = { ...comet.tail[i - 1], opacity: comet.tail[i - 1].opacity * 0.9 };
-  }
-  comet.tail[0] = { x: cometX, y: cometY, opacity: 1 };
-
-  drawComet(cometX, cometY, comet.tail);
-});
-
+        drawComet(cometX, cometY, comet.tail);
+      });
 
       requestAnimationFrame(animate);
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-
     animate();
 
     return () => {
@@ -130,21 +132,15 @@ cometsRef.current.forEach((comet) => {
     };
   }, []);
 
-  // Animate offsetRef.current smoothly on scrollDirection changes
+  // Animate offset smoothly on scroll direction
   useEffect(() => {
     if (tweenRef.current) tweenRef.current.kill();
-
-    // If no scroll or zero, don't move (optional)
     if (!scrollDirection) return;
 
-    // Move offset by a fixed amount smoothly, positive or negative based on scroll
     tweenRef.current = gsap.to(offsetRef, {
-      current: `+=${scrollDirection * 500}`, // move 150px left/right on each scroll event
+      current: `+=${scrollDirection * 500}`, // increased movement
       duration: 1.2,
       ease: 'power2.out',
-      onUpdate: () => {
-        // no setState needed, animation reads offsetRef.current directly
-      },
     });
   }, [scrollDirection]);
 
